@@ -25,6 +25,8 @@ import com.lmax.simpledsl.api.RequiredArg;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
+import java.util.Optional;
+
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -134,6 +136,23 @@ class DslParamsParserTest
         final DslParams params = parser.parse(args, parameters);
 
         assertEquals("value", params.value("b"));
+    }
+
+    @Test
+    public void shouldFilterOptionalArgumentWhenTheNoneValueIsProvided()
+    {
+        final String[] args = {"b: NONE"};
+        final DslArg[] parameters = {
+                new OptionalArg("a").setDefault("value").setNone("NONE"),
+                new OptionalArg("b").setDefault("value").setNone("NONE")
+        };
+
+        final DslParamsParser parser = new DslParamsParser();
+
+        final DslParams params = parser.parse(args, parameters);
+
+        assertEquals(Optional.of("value"), params.valueAsOptional("a"));
+        assertEquals(Optional.empty(), params.valueAsOptional("b"));
     }
 
     @Test

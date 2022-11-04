@@ -27,9 +27,11 @@ public abstract class SimpleDslArg implements DslArg
     private final boolean required;
 
     protected String defaultValue;
+    protected String noneValue;
     protected boolean allowMultipleValues;
     protected String multipleValueSeparator;
     protected String[] allowedValues;
+
 
     public SimpleDslArg(final String name, final boolean required)
     {
@@ -61,6 +63,17 @@ public abstract class SimpleDslArg implements DslArg
     }
 
     @Override
+    public String getNoneValue()
+    {
+        if (required)
+        {
+            throw new IllegalArgumentException("A required argument can not have a none value");
+        }
+
+        return noneValue;
+    }
+
+    @Override
     public boolean isAllowMultipleValues()
     {
         return allowMultipleValues;
@@ -81,8 +94,9 @@ public abstract class SimpleDslArg implements DslArg
     /**
      * Set a default value for this argument.
      * <p>
-     * If a default is provided, the argument will be considered to always have a value, and will return the default if
-     * no other value is provided by the caller.
+     * If a default is provided, the argument will be considered to always
+     * have a value, and will return the default if no other value is
+     * provided by the caller.
      *
      * @param defaultValue the default value for the argument.
      * @return this argument
@@ -91,6 +105,23 @@ public abstract class SimpleDslArg implements DslArg
     public SimpleDslArg setDefault(final String defaultValue)
     {
         this.defaultValue = defaultValue;
+        return this;
+    }
+
+    /**
+     * Set a none value for this argument.
+     * <p>
+     * If a none is provided, the argument will be treated as if it had not
+     * been specified, ignoring any {@link #setDefault(String) default value}
+     * that may have been provided.
+     *
+     * @param noneValue the none value for the argument.
+     * @return this argument
+     * @throws IllegalArgumentException if the none value cannot be set
+     */
+    public SimpleDslArg setNone(final String noneValue)
+    {
+        this.noneValue = noneValue;
         return this;
     }
 

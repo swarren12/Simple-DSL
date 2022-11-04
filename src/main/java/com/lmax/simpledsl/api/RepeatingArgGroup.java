@@ -70,6 +70,12 @@ public class RepeatingArgGroup implements DslArg
     }
 
     @Override
+    public String getNoneValue()
+    {
+        throw new IllegalArgumentException("A repeating group can not have a none value");
+    }
+
+    @Override
     public boolean isAllowMultipleValues()
     {
         return false;

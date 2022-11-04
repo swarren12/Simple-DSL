@@ -37,12 +37,24 @@ public interface DslArg
 
     /**
      * Get a default value for this argument.
-     *
+     * <p>
      * If the argument is required, this method will throw an {@link IllegalArgumentException}.
      *
      * @return the default value for the argument
      */
     String getDefaultValue();
+
+    /**
+     * Get a value for this argument that can be used explicitly to mark the
+     * parameter as not being provided. This will mostly be useful in
+     * combination with the {@link #getDefaultValue() default value}, which
+     * means that the parameter can not simply be omitted.
+     * <p>
+     * If the argument is required, this method will throw an {@link IllegalArgumentException}.
+     *
+     * @return the "none" value for the argument
+     */
+    String getNoneValue();
 
     /**
      * Check whether this argument can take multiple values.

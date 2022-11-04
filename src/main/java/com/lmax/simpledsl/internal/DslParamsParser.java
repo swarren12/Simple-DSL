@@ -29,6 +29,7 @@ import java.util.Deque;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * Parser for transforming a specification of {@link DslArg DslArgs} and a set of provided {@link String} values into
@@ -57,13 +58,29 @@ public class DslParamsParser
 
     private static Deque<NameValuePair> parseArgumentValues(final String[] args)
     {
-        final ArrayDeque<NameValuePair> nameValuePairs = new ArrayDeque<>();
+        final Deque<NameValuePair> nameValuePairs = new ArrayDeque<>();
         for (String arg : args)
         {
             final NameValuePair nameValuePair = NameValuePair.fromArgumentString(arg);
             nameValuePairs.add(nameValuePair);
         }
         return nameValuePairs;
+    }
+
+    private static String checkValidValue(final DslArg arg, final String value)
+    {
+        if (arg.getAllowedValues() != null)
+        {
+            for (final String allowedValue : arg.getAllowedValues())
+            {
+                if (allowedValue.equalsIgnoreCase(value))
+                {
+                    return allowedValue;
+                }
+            }
+            throw new IllegalArgumentException(arg.getName() + " parameter value '" + value + "' must be one of: " + Arrays.toString(arg.getAllowedValues()));
+        }
+        return value;
     }
 
     private static final class ArgumentProcessor
@@ -256,7 +273,12 @@ public class DslParamsParser
                             : Collections.singletonList(arg.getDefaultValue());
                 }
             }
-            return values;
+
+            return (arg.isRequired() || arg.getNoneValue() == null)
+                    ? values
+                    : values.stream()
+                    .filter(val -> !arg.getNoneValue().equals(val))
+                    .collect(Collectors.toList());
         }
     }
 
@@ -278,7 +300,9 @@ public class DslParamsParser
 
             final Map<String, SimpleDslArg> argsByName = new HashMap<>();
             argsByName.put(groupArg.getIdentity().getName(), groupArg.getIdentity());
-            for (SimpleDslArg dslArg : groupArg.getOtherArgs())
+
+            final SimpleDslArg[] otherArgs = groupArg.getOtherArgs();
+            for (SimpleDslArg dslArg : otherArgs)
             {
                 if (argsByName.put(dslArg.getName().toLowerCase(), dslArg) != null)
                 {
@@ -328,9 +352,9 @@ public class DslParamsParser
                 }
             }
 
-            final DslArg[] dslArgs = new DslArg[groupArg.getOtherArgs().length + 1];
+            final DslArg[] dslArgs = new DslArg[otherArgs.length + 1];
             dslArgs[0] = groupArg.getIdentity();
-            System.arraycopy(groupArg.getOtherArgs(), 0, dslArgs, 1, groupArg.getOtherArgs().length);
+            System.arraycopy(otherArgs, 0, dslArgs, 1, otherArgs.length);
             groupsByArg.computeIfAbsent(groupArg, k -> new ArrayList<>()).add(new RepeatingParamValues(dslArgs, valuesByName));
         }
 
@@ -338,21 +362,5 @@ public class DslParamsParser
         {
             return new RepeatingParamGroup(arg.getName(), groupsByArg.getOrDefault(arg, Collections.emptyList()));
         }
-    }
-
-    private static String checkValidValue(final DslArg arg, final String value)
-    {
-        if (arg.getAllowedValues() != null)
-        {
-            for (final String allowedValue : arg.getAllowedValues())
-            {
-                if (allowedValue.equalsIgnoreCase(value))
-                {
-                    return allowedValue;
-                }
-            }
-            throw new IllegalArgumentException(arg.getName() + " parameter value '" + value + "' must be one of: " + Arrays.toString(arg.getAllowedValues()));
-        }
-        return value;
     }
 }
